@@ -148,6 +148,7 @@
 (global-set-key "\C-x\C-m" 'execute-extended-command)
                       ;for when I don't want to use smex
 (global-set-key "\C-x\C-b" 'ibuffer)
+(define-key ibuffer-mode-map (kbd "M-g") 'goto-line)
 
 ;comint-previous-matching-input-from-input
 ;; (define-key py-shell-map (quote [up])
@@ -237,6 +238,9 @@
 (define-key f4-map "s" 'dss/eval-region-or-last-sexp)
 (define-key f4-map "d" 'dss/eval-defun)
 
+(define-key f4-map "x" 'magit-status)
+(define-key f4-map "v" 'dvc-status)
+
 (define-key f4-map "3" 'dss/out-sexp)
 (define-key f4-map "8" 'dss/out-one-sexp)
 
@@ -253,7 +257,7 @@
 
 (define-key f4-map "'" (kbd "\""))
 
-(define-key f4-map "c" 'k2-copy-whole-sexp)
+;; (define-key f4-map "c" 'k2-copy-whole-sexp)
 
 ;;(define-keymap f4-map "n" 'dss/goto-match-paren)
 (define-key f4-map ";" 'goto-last-change)
@@ -282,6 +286,11 @@
 
 (define-key f4-map "6" 'dss/backward-string)
 (define-key f4-map "7" 'dss/forward-string)
+
+(define-key f4-map "-" 'dss/clojure-run-tests)
+(define-key f4-map "c" 'dss/slime-repl-clear)
+(define-key f4-map "p" 'dss/clojure-jump-to-project)
+(define-key f4-map "j" 'dss/clojure-jump-between-tests-and-code)
 
 (define-key f4-map "/" 'dss/goto-match-paren)
 (define-key f4-map "]" 'dss/smex)
@@ -325,11 +334,16 @@
 (define-key f7-map "g" 'dss/bookmark-jump)
 (define-key f7-map "b" 'ido-switch-buffer)
 
+(define-key f7-map "s" 'dss/toggle-window-split)
+(define-key f7-map "t" 'dss/transpose-windows)
 
-(define-key f7-map "d" 'dss-defun-skeleton)
-(define-key f7-map "i" '(lambda ()
-                          (interactive)
-                          (insert "(interactive)")))
+;; (define-key f7-map "d" 'dss-defun-skeleton)
+;; (define-key f7-map "i" '(lambda ()
+;;                           (interactive)
+;;                           (insert "(interactive)")))
+
+(define-key f7-map "d" 'slime-describe-symbol)
+(define-key f7-map "i" 'slime-inspect)
 
 (define-key f7-map "a" 'auto-complete-mode)
 (define-key f7-map "=" 'dss/toggle-current-window-dedication)
