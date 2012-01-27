@@ -111,7 +111,11 @@
         (:name js2-mode :type git :url "https://github.com/mooz/js2-mode")
         (:name elein :type git :url "https://github.com/remvee/elein.git")
         (:name pg :type http :url "http://www.online-marketwatch.com/pgel/pg.el")
-        (:name stompem :type git :url "https://github.com/jwhitlark/Stompem.git")))
+        (:name stompem :type git :url "https://github.com/jwhitlark/Stompem.git")
+
+        (:name elnode :type git :url "https://github.com/tavisrudd/elnode.git")
+        (:name gh :type git :url "https://github.com/sigma/gh.el.git")
+        (:name pcache :type git :url "https://github.com/sigma/pcache.git")))
 
 
 
@@ -160,10 +164,12 @@
         relax
         moz
         pg
+        elnode
         ;; nose
         ;; flymake-point or flymake-cursor ;; I'm installing this from the vendors directory now
         ;; bookmark+ ;; the el-get recipe for this seems to be broken
-
+        pcache
+        gh
         ))
 
 ;; (setq dss-el-get-packages (mapcar (lambda (s)
