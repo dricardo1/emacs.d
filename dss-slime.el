@@ -17,23 +17,8 @@
                     ;;ac-source-dictionary
                     )))
 
-;;; http://common-lisp.net/project/slime/doc/html/Setting-up-pathname-translations.html
-;; (add-hook 'slime-connected-hook
-;;           (lambda ()
-;;             (push (list ".*"
-;;                         (lambda (filename)
-;;                           filename)
-;;                         (lambda (filename)
-;;                           filename))
-;;                   slime-filename-translations)
-;;             (push (list "li47-21"
-;;                         (lambda (filename)
-;;                           (subseq filename (length "/ssh:hunchentoot@sample.ponto-dot.com#5201:")))
-;;                         (lambda (filename)
-;;                           (concat "/ssh:hunchentoot@sample.ponto-dot.com#5201:" filename)))
-;;                   slime-filename-translations)))
-;;; /scpc:sociallinks:
-
+;;; I shouldn't need this stuff much longer as it should be in the
+;;; next clojure-mode release:
 (defun slime-tramp-local-filename (f)
   (interactive)
   (if (file-remote-p f)
@@ -46,11 +31,11 @@
   (if (file-remote-p default-directory)
       (tramp-make-tramp-file-name
        (tramp-file-name-method
-    (tramp-dissect-file-name default-directory))
+        (tramp-dissect-file-name default-directory))
        (tramp-file-name-user
-    (tramp-dissect-file-name default-directory))
+        (tramp-dissect-file-name default-directory))
        (tramp-file-name-host
-    (tramp-dissect-file-name default-directory))
+        (tramp-dissect-file-name default-directory))
        f)
     f))
 
@@ -69,22 +54,3 @@
 
 (add-hook 'slime-mode-hook 'dss/slime-hook)
 (provide 'dss-slime)
-
-
-;;; the following code is just me playing around
-;; (let ((string "(find-namespaces-on-classpath)"))
-;;   (slime-eval-async `(swank:eval-and-grab-output ,string)
-;;     (lambda (result)
-;;       (destructuring-bind (output value) result
-;;         (insert output value)))))
-
-;; (defun dss/slime-eval (string)
-;;   (interactive)
-;;   (slime-eval `(swank:eval-and-grab-output ,string)))
-
-;; (let ((string "(find-namespaces-on-classpath)"))
-;;   (dss/slime-eval string)
-;;   )
-;; (setq foobar (dss/slime-eval "1234"))
-;; foobar
-;; (slime-interactive-eval )
