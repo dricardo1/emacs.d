@@ -198,6 +198,7 @@ nil otherwise."
 (setq org-clock-persist-file (concat org-directory "/.org-clock-save.el"))
 (setq org-icalendar-include-todo t)
 (setq org-use-speed-commands t)
+(setq org-return-follows-link t)
 
 (defun dss/babel-no-confirm ()
   (interactive)
@@ -464,6 +465,11 @@ nil otherwise."
 (setq org-agenda-todo-ignore-with-date nil)
 (setq org-agenda-skip-deadline-if-done nil)
 (setq org-agenda-skip-scheduled-if-done nil)
+
+(add-hook 'org-agenda-mode-hook
+          (lambda ()
+            (define-key org-agenda-mode-map "q" 'bury-buffer))
+          'append)
 
 (setq org-agenda-text-search-extra-files (quote (agenda-archives)))
 (setq org-enforce-todo-dependencies t)
