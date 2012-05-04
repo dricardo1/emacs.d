@@ -15,7 +15,7 @@
 
 (define-ibuffer-column dss-modified (:name "M" :inline t)
   (if (buffer-modified-p)
-      (propertize "-" 'face '(:foreground "magenta"))
+      (propertize "-" 'face '(:foreground "yellow"))
     " "))
 
 ;;; https://github.com/mattkeller/mk-project/
