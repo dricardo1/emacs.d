@@ -78,6 +78,8 @@
 (define-key global-map "\e\e[B" 'forward-paragraph)
 (define-key global-map "\eOb" 'forward-paragraph)
 
+;;; there has to be a cleaner way to do this ...
+
 (define-key global-map "\eOc" (kbd "M-f"))
 (require 'misc)
 (require 'subword)
@@ -85,7 +87,8 @@
 (define-key subword-mode-map (kbd "M-f") 'forward-word)
 (define-key global-map "\eOd" 'backward-word)
 
-;;; there has to be a cleaner way to do this ...
+;;; http://www.gnu.org/software/emacs/manual/html_node/viper/Key-Bindings.htm
+;;; ;@@TR: the following needs to be translated to use input-decode-map
 ;; terminal/gnu-screen arrow key support
 (define-key global-map "\e[A" (kbd "<up>"))
 (define-key global-map "\e[B" (kbd "<down>"))
@@ -102,6 +105,12 @@
 (define-key global-map "\eO2C" (kbd "S-<right>"))
 (define-key global-map "\eO2A" (kbd "S-<up>"))
 (define-key global-map "\eO2B" (kbd "S-<down>"))
+
+(define-key global-map "\e[1;2D" (kbd "S-<left>"))
+(define-key global-map "\e[1;2C" (kbd "S-<right>"))
+(define-key global-map "\e[1;2A" (kbd "S-<up>"))
+(define-key global-map "\e[1;2B" (kbd "S-<down>"))
+
 ;;; shift arrow in gnu screen / urxvt
 (define-key global-map "\e[d" (kbd "S-<left>"))
 (define-key global-map "\e[c" (kbd "S-<right>"))
