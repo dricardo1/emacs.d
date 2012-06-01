@@ -52,6 +52,7 @@ http://github.com/technomancy/emacs-starter-kit/blob/master/starter-kit-defuns.e
         (delete-process inferior-moz-buffer)
         ;; (kill-buffer inferior-moz-buffer)
         ))
+  (sit-for 0.2)
   (set-process-query-on-exit-flag (inferior-moz-process) nil)
   (inferior-moz-process))
 
