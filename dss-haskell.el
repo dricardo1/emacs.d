@@ -3,11 +3,11 @@
 ;; Haskell
 (require 'haskell-mode)
 (add-hook 'haskell-mode-hook 'turn-on-haskell-doc-mode)
-(add-hook 'haskell-mode-hook 'turn-on-haskell-indentation)
-;;(add-hook 'haskell-mode-hook 'turn-on-haskell-indent)
+;;(add-hook 'haskell-mode-hook 'turn-on-haskell-indentation)
+(add-hook 'haskell-mode-hook 'turn-on-haskell-indent)
 ;;(add-hook 'haskell-mode-hook 'turn-on-haskell-simple-indent)
 
-(add-to-list 'load-path "/home/tavis/.cabal/share/scion-current/emacs")
+(add-to-list 'load-path "/home/tavis/src/scion/emacs")
 (require 'scion nil t)
 (setq scion-completing-read-function 'ido-completing-read)
 ;; if ./cabal/bin is not in your $PATH
@@ -24,39 +24,63 @@
 (defun dss/haskell-electric-pair ()
   ;; this version doesn't check to see if we're inside of a string or comment
   (interactive)
-  (let (parens-require-spaces)
+  (let (parens-require-spaces
+        (insert-pair-alist
+         '((?\( ?\)) (?\[ ?\]) (?\{ ?\}) (?\< ?\>) (?\" ?\") (?\' ?\') (?\` ?\`))))
     (insert-pair)))
 
 (defun dss/haskell-goto-definition ()
   (interactive)
   (inferior-haskell-find-definition (haskell-ident-at-point)))
 
+(defun dss/haskell-align-equals ()
+  (interactive)
+  (align-regexp
+   (region-beginning) (region-end)
+   "\\(\\s-*\\) = " 1 0 nil))
+
+(defun dss/haskell-init-ac ()
+  (interactive)
+  (setq ac-sources
+        '(
+          ac-source-etags
+          ac-source-ghc-mod
+          my/ac-source-haskell
+          ac-source-haskell
+          ac-source-yasnippet
+          ac-source-words-in-same-mode-buffers
+                                        ;ac-source-words-in-buffer
+          ;;ac-source-abbrev
+          )))
+
 (defun dss/haskell-mode-hook ()
   (interactive)
-  ;; (scion-mode 1)
-  ;; (scion-flycheck-on-save 1)
+  (scion-mode 1)
+  (scion-flycheck-on-save 1)
   (linum-mode 1)
   (require 'inf-haskell)
 
   (define-key haskell-mode-map (kbd "M-.") 'dss/haskell-goto-definition)
   (define-key inferior-haskell-mode-map (kbd "M-.") 'dss/haskell-goto-definition)
-  (dss/map-define-key haskell-mode-map '("\"" "(" "[" "{") 'dss/haskell-electric-pair)
-  (dss/map-define-key inferior-haskell-mode-map '("\"" "(" "[" "{") 'dss/haskell-electric-pair)
+  (dss/map-define-key haskell-mode-map '("\"" "`" "(" "[" "{") 'dss/haskell-electric-pair)
+  (dss/map-define-key inferior-haskell-mode-map '("\"" "`" "(" "[" "{") 'dss/haskell-electric-pair)
+  (define-key haskell-mode-map (kbd "C-c =") 'dss/haskell-align-equals)
+  (define-key haskell-mode-map (kbd "M-=") 'haskell-indent-align-guards-and-rhs)
   (ghc-init)
   (flymake-mode)
   (dss/install-whitespace-cleanup-hook)
   (dss/load-lineker-mode)
-  (setq ac-sources '(
-                     ac-source-ghc-mod
-                                        ;my/ac-source-haskell
-                     ac-source-yasnippet
-                     ac-source-abbrev
-                     ac-source-words-in-buffer)))
+  (dss/haskell-init-ac)
+  )
 
 ;; ;@@TR: remove the default .hs flymake hook and add ghc-flymake ...
 ;; (setq flymake-allowed-file-name-masks (cdr flymake-allowed-file-name-masks))
-
 (add-hook 'haskell-mode-hook 'dss/haskell-mode-hook)
+
+(defun dss/inf-haskell-mode-hook ()
+  (interactive)
+  (dss/haskell-init-ac))
+(add-hook 'inferior-haskell-mode-hook 'dss/inf-haskell-mode-hook)
 
 (provide 'dss-haskell)
 
@@ -249,7 +273,7 @@
         "FlexibleContexts" "FlexibleInstances" "ConstrainedClassMethods"
         "MultiParamTypeClasses" "FunctionnalDependencies" "PackageImports"))
 (defvar my/haskell-ghc-no-options
-      (mapcar '(lambda (n) (concat "No" n)) my/haskell-ghc-options))
+      (mapcar #'(lambda (n) (concat "No" n)) my/haskell-ghc-options))
 (defvar my/haskell-ghc-language-options
   (sort (append nil my/haskell-ghc-options my/haskell-ghc-no-options)
         #'(lambda (a b) (> (length a) (length b))))
