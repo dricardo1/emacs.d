@@ -71,13 +71,29 @@ http://github.com/technomancy/emacs-starter-kit/blob/master/starter-kit-defuns.e
 (defun dss/moz-eval-buffer ()
   "Send full buffer of js to Moz."
   (interactive)
+  (run-hooks 'dss/moz-pre-eval-hook)
+  (if (equal major-mode 'coffee-mode)
+      (dss/moz-coffee)
+    (dss/moz-send-string (buffer-string)))
                                         ;(comint-send-string (inferior-moz-process) exp)
-  (dss/moz-send-string (buffer-string)))
+  )
+
+(setq dss/moz-pre-eval-hook nil)
+
+(defun dss/moz-enter-page ()
+  (interactive)
+  (dss/moz-send-string "repl.enter(content)")
+  ;; (add-hook 'after-save-hook fname t t)
+  )
+
+(defun dss/moz-set-page-context ()
+  (interactive)
+  (add-hook 'dss/moz-pre-eval-hook 'dss/moz-enter-page t t))
 
 (defun dss/moz-eval-expression (exp)
   "Send expression to Moz."
   (interactive "sJSEval: ")
-  ;(comint-send-string (inferior-moz-process) exp)
+                                        ;(comint-send-string (inferior-moz-process) exp)
   (dss/moz-send-string exp))
 
 (defun trim-ws-in-string (string)
@@ -97,6 +113,8 @@ http://github.com/technomancy/emacs-starter-kit/blob/master/starter-kit-defuns.e
                     expr
                     "\""))))
 
+;;repl.home = function () { return this.enter(this._creationContext.content); }
+
 (defun dss/moz-eval-para ()
   (interactive)
   (mark-paragraph)
@@ -107,14 +125,23 @@ http://github.com/technomancy/emacs-starter-kit/blob/master/starter-kit-defuns.e
 (defun dss/moz-eval-region-or-para ()
   (interactive)
   (if mark-active
-      (dss/moz-eval-region)
+      (call-interactively 'dss/moz-eval-region)
     (dss/moz-eval-para)))
 
 (defun dss/moz-eval-region (start end)
   (interactive "r")
-  (let ((str (buffer-substring start end)))
-    (message str)
-    (dss/moz-eval-expression str)))
+  (run-hooks 'dss/moz-pre-eval-hook)
+  (if (equal major-mode 'coffee-mode)
+      (progn
+        ;; (call-interactively 'dss/coffee-send-region)
+        (ignore-errors
+          (dss/coffee-send-region start end))
+        (sit-for 0.5)
+        (message "sending to moz from coffee")
+        (dss/moz-coffee))
+    (let ((str (buffer-substring start end)))
+      (message str)
+      (dss/moz-eval-expression str))))
 
 (defun dss/moz-send-string (str)
   (interactive "sJSEval: ")
