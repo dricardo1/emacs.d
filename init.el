@@ -4,6 +4,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; see .emacs.d/requirements.txt I install most dependencies in
 ;; /usr/share/emacs/site-lisp via gentoo's portage
+
+;; (require 'dss-cedet)
+
 (require 'dss-init-el-get)
 
 (require 'dss-basic-default-config)
