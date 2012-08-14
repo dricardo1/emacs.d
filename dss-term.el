@@ -1,5 +1,6 @@
 (require 'multi-term)
 (require 'comint)
+(require 'dss-vc)
 
 ;;; study this http://snarfed.org/why_i_run_shells_inside_emacs
 ;;; and this http://snarfed.org/emacsclient_in_tramp_remote_shells
@@ -14,6 +15,7 @@
 ;; multi-term
 (autoload 'multi-term "multi-term")
 (setq multi-term-program "/bin/bash")
+(setq multi-term-program-switches "-l")
 (setq multi-term-switch-after-close nil)
 
 (defun dss/cd-multi-term (dir &optional command switch buffer-name)
@@ -111,6 +113,113 @@
     (call-interactively 'dss/insert-path)
     (kill-region beg (point)))
   (term-send-raw-string (substring-no-properties (current-kill 0))))
+
+(defun dss/term-toggle-filename-rel-abs ()
+  (interactive)
+  (let* ((fn (with-no-warnings
+               (if (eq ido-use-filename-at-point 'guess)
+                   (ffap-guesser)
+                 (ffap-string-at-point))))
+         (fn (replace-regexp-in-string
+              "^~/" (concat (getenv "HOME") "/")
+              fn))
+         (replacement
+          (if (file-name-absolute-p fn)
+              (replace-regexp-in-string
+               default-directory "" fn nil t)
+            (expand-file-name fn)))
+         (replacement
+          (replace-regexp-in-string (getenv "HOME") "~" replacement nil t)))
+    (dss/term-backward-kill-word)       ; must be at end
+    (term-send-raw-string replacement)))
+
+(defun dss/term-insert-path-int (ido-fn &optional match-at-point no-insert)
+  (let (fn
+        initial
+        ido-current-directory
+        (ido-enable-last-directory-history nil))
+    (when (and match-at-point
+               (setq fn (with-no-warnings
+                          (if (eq ido-use-filename-at-point 'guess)
+                              (ffap-guesser)
+                            (ffap-string-at-point))))
+               (not (string-match "^http:/" fn))
+               (let ((absolute-fn (expand-file-name fn)))
+                 (setq d (if (file-directory-p absolute-fn)
+                             (file-name-as-directory absolute-fn)
+                           (file-name-directory absolute-fn))))
+               (file-directory-p d))
+      (setq ido-current-directory d)
+      (setq initial (file-name-nondirectory fn)))
+    (let* ((result (funcall ido-fn
+                            "path: "
+                            ido-current-directory nil nil
+                            initial))
+           (short-result (replace-regexp-in-string
+                          (getenv "HOME") "~" result nil t)))
+      (when (not no-insert)
+        (when (and fn initial)
+          (dss/term-backward-kill-word))
+        (term-send-raw-string short-result))
+      result)))
+
+(defun dss/term-insert-file-path ()
+  (interactive)
+  (dss/term-insert-path-int 'ido-read-file-name t))
+
+(defun dss/term-insert-dir-path ()
+  (interactive)
+  (dss/term-insert-path-int 'ido-read-directory-name t))
+
+(defun dss/term-insert-vc-target ()
+  (interactive)
+  (term-send-raw-string (dss/vc-choose-target)))
+
+(defun dss/term-cd-dir-path ()
+  (interactive)
+  (let ((dir (dss/term-insert-path-int 'ido-read-directory-name nil t)))
+    (dss/term-cd dir)))
+
+(defun dss/term-get-dedicated-buffer ()
+  (interactive)
+  (or (let ((win (dss/term-get-current-window)))
+        (when win
+          (window-buffer win)))
+      (save-excursion
+        (if (get-buffer "*MULTI-TERM-DEDICATED*")
+            (get-buffer "*MULTI-TERM-DEDICATED*")))))
+
+(defun dss/term-get-current-window ()
+  (if (multi-term-dedicated-exist-p)
+      multi-term-dedicated-window
+    (car
+     (delq nil
+           (mapcar (lambda (w)
+                     (if (eq 'term-mode
+                             (buffer-local-value 'major-mode
+                                                 (window-buffer w)))
+                         w))
+                   (window-list))))))
+
+(defun dss/term-select-window ()
+  (interactive)
+  (select-window
+   (dss/term-get-current-window)))
+
+(defun dss/term-cd (&optional dir term-buffer)
+  (interactive)
+  (let* ((dir (or dir default-directory))
+         (dir (replace-regexp-in-string
+               "^~/" (concat (getenv "HOME") "/")
+               dir))
+         (term-buffer (or term-buffer
+                          (if (eq major-mode 'term-mode)
+                              (current-buffer)
+                            (window-buffer (dss/term-get-current-window))))))
+    (if term-buffer
+        (with-current-buffer term-buffer
+          (term-send-raw-string (format "cd '%s'\n" dir)))
+      (term-send-raw-string (format "cd '%s'\n" dir)))))
 
 (defun dss/term-backward-kill-word ()
   (interactive)
@@ -216,6 +325,17 @@ echo \"tramp initialized\"
         ("M-k" . term-send-raw-meta)
         ("M-y" . term-send-raw-meta)
         ("M-u" . term-send-raw-meta)
+        ("C-M-k" . term-send-raw-meta)
+        ("C-M-l" . term-send-raw-meta)
+        ("C-M-d" . term-send-raw-meta)
+        ("C-M-t" . term-send-raw-meta)
+        ("M-h" . term-send-raw-meta)
+        ("M-s" . term-send-raw-meta)
+        ("M-t" . term-send-raw-meta)
+
+        ("M-c" . term-send-raw-meta)
+        ("M-l" . term-send-raw-meta)
+        ("M-|" . term-send-raw-meta)
 
         ("M-f" . term-send-forward-word)
         ("M-b" . term-send-backward-word)
@@ -224,13 +344,21 @@ echo \"tramp initialized\"
         ("M-n" . term-send-down)
         ("M-N" . term-send-backward-kill-word)
         ("M-r" . term-send-reverse-search-history)
+
         ("M-," . term-send-input)
+
         ("M-." . comint-dynamic-complete)
         ("Od" . term-send-backward-word)
         ("Oc" . term-send-forward-word)
         ("M-d" . term-send-forward-kill-word)
         ("M-g" . dss/term-toggle-mode)
-        ("C-y" . dss/term-yank)))
+        ("C-y" . dss/term-yank)
+
+        ("M-]" . dss/term-cd-dir-path)
+        ("M-;" . dss/term-insert-dir-path)
+        ("M-'" . dss/term-insert-file-path)
+        ("M-\"" . dss/term-toggle-filename-rel-abs)
+        ))
 
 ;; also see http://dea.googlecode.com/svn/trunk/my-lisps/multi-term-settings.el
 
