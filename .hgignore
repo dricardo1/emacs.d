@@ -5,6 +5,8 @@
 ^elpa/.*$
 ^dss-yas-snippets/.*$
 ^el-get/.*$
+^swank/.*
+^var/.*$
 
 # ignore my private user specific setup and custom.el
 ^tavis/.*$
