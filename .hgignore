@@ -7,8 +7,10 @@
 ^el-get/.*$
 ^swank/.*
 ^var/.*$
+^vendor/mu4e.*$
 
 # ignore my private user specific setup and custom.el
 ^tavis/.*$
 ^custom.el$
 ^url/.*$
+^vendor/slime-compile-presave\.el$
