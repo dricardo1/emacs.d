@@ -25,10 +25,10 @@
      ((background-mode . dark)
       (border-color . "black")
       (cursor-color . "red")
-      (foreground-color . "white")
+      (foreground-color . "#d0d0d0")
       (mouse-color . "grey"))
      (default ((t (nil))))
-     (default ((t (:foreground "white"))))
+     (default ((t (:foreground "#d0d0d0" :background nil))))
      (bold ((t (:bold t))))
      ;;(bold-italic ((t (:underline t :foreground "white"))))
      (highlight ((t (:background "blue" :foreground "yellow"))))
@@ -36,12 +36,8 @@
      (underline ((t (:underline t))))
      ;;
      (minibuffer-prompt ((t (:foreground "yellow"))))
-     ;;(modeline ((t (:background "#080808" :foreground "white"))))
      (modeline ((t (:background "#000087" :foreground "#ffffaf"))))
-     ;;(modeline-inactive ((t (:background "#161616" :foreground "#5f5f5f"))))
-     ;;(modeline-inactive ((t (:background "#161616" :foreground "white"))))
-
-     (modeline-inactive ((t (:background "#262626" :foreground "white"))))
+     (modeline-inactive ((t (:background "#1c1c1c" :foreground "#ffffaf"))))
      (modeline-mousable-minor-mode ((t (:background "black" :foreground "white"))))
      (modeline-mousable ((t (:background "black" :foreground "white"))))
 
@@ -84,7 +80,8 @@
      (speedbar-highlight-face ((t (:background "#0000ff"))))
      (whitespace-newline ((t (:background "#000087"))))
      (trailing-whitespace ((t (:background "#000087"))))
-     (linum ((t (:foreground "#9f990e" :background "#303030"))))
+     (linum ((t (:foreground "#626262" :background "#1c1c1c"))))
+     ;; #9f990e
      ;; (linum ((t (:foreground "#777777" :background "#000087"))))
      ;; (linum ((t (:foreground "white" :background "#005f00"))))
      (show-ws-tab ((t (:background "#4e4e4e"))))
