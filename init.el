@@ -35,6 +35,7 @@
 (require 'dss-ecb)
 
 ;; language related major modes
+(require 'dss-sh-mode)
 (require 'dss-slime)
 (require 'dss-python)
 (require 'dss-javascript)
