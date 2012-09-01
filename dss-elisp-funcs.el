@@ -34,6 +34,18 @@
   "An asynchronous version of `dss/call-command-with-input`"
   (apply 'dss/call-command-with-input (append (list command input 0) args)))
 
+(defun dss/chomp (str)
+  "Chomp leading and tailing whitespace from STR.
+
+  http://emaswiki.org/emas/ElispCookbook#to6"
+  (while (string-match "\\`\n+\\|^\\s-+\\|\\s-+$\\|\n+\\'"
+                       str)
+    (setq str (replace-match "" t t str)))
+  str)
+
+(defun dss/strip-string (str)
+  (replace-regexp-in-string "\\`\n+\\|^\\s-+\\|\\s-+$\\'" ""
+                            str))
 
 ;;; http://lists.gnu.org/archive/html/help-gnu-emacs/2009-06/msg00764.html
 (defun partition-list (list length)
