@@ -2,7 +2,6 @@
 (require 'cc-vars)
 (require 'dss-codenav-helpers)
 
-
 ;;; http://weblogs.asp.net/george_v_reilly/archive/2009/03/24/exuberant-ctags-and-javascript.aspx
 ;;; http://tbaggery.com/2011/08/08/effortless-ctags-with-git.html
 
@@ -83,12 +82,25 @@ PARSE-STATUS is as documented in `parse-partial-sexp'."
       (insert quote-string)
       (backward-char 1))))
 
+(defun dss/js-insert-semicolon ()
+  (interactive)
+  (cond ((eq last-command this-command)
+         (end-of-line))
+        ((not (or (dss/in-string-p)
+                  (dss/in-comment-p)))
+         (save-excursion
+           (end-of-line)
+           (when (not (looking-back ";"))
+             (insert ";"))
+           ))
+        (t (self-insert-command 1))))
+
 (require 'jquery-doc)
 (defun dss/js2-mode-hook ()
   (require 'espresso)
   (flymake-mode)
   ;; (setq ac-sources '(ac-source-semantic-raw))
-
+  (setq mode-name "JS")
   (setq espresso-indent-level 4
         indent-tabs-mode nil
         c-basic-offset 4)
@@ -110,6 +122,7 @@ PARSE-STATUS is as documented in `parse-partial-sexp'."
   (define-key js2-mode-map [(backspace)] 'c-electric-backspace)
   (define-key js2-mode-map [(control d)] 'c-electric-delete-forward)
   (define-key js2-mode-map [(control meta q)] 'dss/indent-sexp)
+  (define-key js2-mode-map ";" 'dss/js-insert-semicolon)
   (if (featurep 'js2-highlight-vars)
       (js2-highlight-vars-mode))
   (mapc (lambda (char)
