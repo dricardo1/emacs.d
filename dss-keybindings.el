@@ -9,6 +9,7 @@
 (require 'dss-lisps)
 (require 'dss-completion)
 (require 'dss-bookmarks-registers)
+(require 'window-numbering)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; additional custom keymaps, populated below
@@ -23,11 +24,29 @@
 ;; global map
 (define-key global-map (kbd "M-X") 'smex-update-and-run)
 (define-key global-map (kbd "M-x") 'smex)
+
+(define-key global-map (kbd "M-:") 'dss/eval-expression)
 (define-key global-map (kbd "M-s") 'ido-goto-symbol)
 (define-key global-map (kbd "M-]") 'dss/multi-term)
+(define-key global-map (kbd "M-[ [") 'multi-term-next)
+(define-key global-map (kbd "M-[ M-[") 'multi-term-next)
+(define-key global-map (kbd "M-[ M-]") 'multi-term-prev)
+
 (define-key global-map (kbd "M-,") 'dss/magit-or-monky)
 (define-key global-map (kbd "C-M-]") 'sunrise-cd)
 (define-key global-map (kbd "C-M-l") 'dss/sync-point-all-windows)
+
+(define-key global-map (kbd "M-`") 'bm-toggle)
+(mapc (lambda (map)
+        (define-key map (kbd "M-0") 'bm-next)
+        (define-key map (kbd "M-9") 'bm-previous))
+      (list global-map window-numbering-keymap))
+
+(define-key global-map (kbd "M-=") '(lambda ()
+                                      (interactive)
+                                      (set-mark-command (list 4))))
+
+(define-key ctl-x-map "f" 'ido-find-file)
 
 (defun dss/hippie-expand ()
   (interactive)
@@ -37,6 +56,7 @@
 (global-set-key (kbd "M-/") 'dss/hippie-expand)
 (global-set-key (kbd "M-TAB") 'dabbrev-expand)
 
+(define-key global-map (kbd "M-@") 'etags-select-find-tag-at-point)
 
 (global-set-key "\C-ca" 'org-agenda)
 (global-set-key "\C-cl" 'org-store-link)
@@ -92,10 +112,11 @@
 ;;; http://www.gnu.org/software/emacs/manual/html_node/viper/Key-Bindings.htm
 ;;; ;@@TR: the following needs to be translated to use input-decode-map
 ;; terminal/gnu-screen arrow key support
-(define-key global-map "\e[A" (kbd "<up>"))
-(define-key global-map "\e[B" (kbd "<down>"))
-(define-key global-map "\e[C" (kbd "<right>"))
-(define-key global-map "\e[D" (kbd "<left>"))
+
+(define-key input-decode-map "\e[A" [up])
+(define-key input-decode-map "\e[B" [down])
+(define-key input-decode-map "\e[C" [right])
+(define-key input-decode-map "\e[D" [left])
 
 (define-key global-map "\e[1;9A" (kbd "M-<up>"))
 (define-key global-map "\e[1;9B" (kbd "M-<down>"))
@@ -165,6 +186,9 @@
       (occur (if isearch-regexp isearch-string
                (regexp-quote isearch-string))))))
 
+(define-key isearch-mode-map (kbd "<f4>") 'isearch-repeat-forward)
+(define-key isearch-mode-map (kbd "<f3>") 'isearch-repeat-backward)
+
 (defun dss/confirm-exit-emacs ()
   "ask for confirmation before exiting emacs"
   (interactive)
@@ -173,7 +197,7 @@
 
 (global-unset-key "\C-x\C-c")
 (global-set-key "\C-x\C-c" 'dss/confirm-exit-emacs)
-(global-set-key "\C-x\C-m" 'execute-extended-command)
+(global-set-key "\C-x\C-m" 'dss/execute-extended-command)
                       ;for when I don't want to use smex
 (global-set-key "\C-x\C-b" 'ibuffer)
 (define-key ibuffer-mode-map (kbd "M-g") 'goto-line)
@@ -255,6 +279,9 @@
 
 
 ;; f4-map
+(define-key f4-map "." 'dss/grep-project)
+(define-key f4-map "t" 'etags-select-find-tag-at-point)
+(define-key f4-map "r" 'etags-select-find-tag)
 
 (define-key f4-map " " 'fixup-whitespace)
 (defun dss/eval-region-or-last-sexp ()
@@ -376,13 +403,12 @@
 
 (define-key f7-map "d" 'slime-describe-symbol)
 (define-key f7-map "i" 'slime-inspect)
-(define-key f7-map [(f7)] 'slime-selector)
 (define-key f7-map "a" 'slime-apropos)
 
 (define-key f7-map "=" 'dss/toggle-current-window-dedication)
 (define-key f7-map "'" 'k2-kill-whole-paragraph)
 (define-key f7-map "," 'k2-copy-whole-paragraph)
-(define-key f7-map "." 'mark-paragraph)
+(define-key f7-map "." 'helm-mini)
 (define-key f7-map "0" 'k2-toggle-mark)
 
 ;; f8 map for org-mode
