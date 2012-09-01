@@ -117,6 +117,8 @@
         ;;        :compile (".")
         ;;        :build ("make -C doc && rm contrib/slime-tramp.elc")
         ;;        )
+
+        (:name workgroups :type git :url "https://github.com/tlh/workgroups.el.git")
         (:name monky :type git
                :url "https://github.com/ananthakumaran/monky.git"
                :build ("make all"))
@@ -125,13 +127,14 @@
                :description "It's Magit! An Emacs mode for Git."
                :type git
                :url "http://github.com/magit/magit.git"
-               :branch "next"
+               :branch "maint"
                :info "."
                ;; that used to be how to build it :build ("./autogen.sh" "./configure" "make")
                :build ("make all")
                :build/darwin `(,(concat "PATH=" invocation-directory ":$PATH make all")))
 
         (:name isearch+ :type emacswiki)
+        (:name linkd :type emacswiki)
         (:name grep-a-lot :type git :url
                "https://github.com/ZungBang/emacs-grep-a-lot")
         (:name idle-highlight-mode :type git :url
@@ -175,6 +178,14 @@
         (:name restclient :type git :url "https://github.com/pashky/restclient.el.git")
         (:name buster-mode :type git :url "git://gitorious.org/buster/buster-mode.git")
         (:name mark-multiple :type git :url "git://github.com/magnars/mark-multiple.el.git")
+        (:name aws-el :type git :url "https://github.com/ieure/aws-el.git")
+
+        (:name helm :type git :url "https://github.com/emacs-helm/helm.git")
+
+        (:name evil-surround
+               :type git
+               :url "https://github.com/timcharper/evil-surround.git")
+        (:name clojure-mode :type git :url "https://github.com/tavisrudd/clojure-mode.git")
         (:name haskell-mode
                :description "A Haskell editing mode"
                :type git
@@ -187,40 +198,52 @@
 (setq dss-el-get-packages
       '(package
                                         ;cedet
-        smex command-frequency
+        smex
         session desktop-recover
-	sunrise-commander
+        sunrise-commander
         sunrise-x-checkpoints
         sunrise-x-modeline
 
-        hlinum
+        workgroups
+        helm
+
+        evil
+        evil-surround
+
+        ;;hlinum
         diminish
         color-theme
-        rainbow-mode
+                                        ;rainbow-mode
         isearch+
+        ;;linkd
         ace-jump-mode
-        grep-a-lot
+        ;;grep-a-lot
         mark-multiple
-        undo-tree goto-last-change
+        undo-tree
+        goto-last-change
+        browse-kill-ring
+
         filladapt
         show-wspace lineker
         visible-mark
         iedit highlight-symbol idle-highlight-mode
         list-register bm breadcrumb
-        window-numbering column-marker vline col-highlight
+        window-numbering
+        ;;column-marker vline col-highlight
         transpose-frame
 
+        popup
         pos-tip ;; required by popup-kill-ring
         popup-kill-ring
 
         dvc magit monky magithub gist
 
-        yasnippet
-        auto-complete ac-dabbrev
-
+        ;;yasnippet
         paredit rainbow-delimiters autopair
 
         etags-select
+        auto-complete
+        ac-dabbrev
         ac-slime
         auto-complete-etags
         auto-complete-extension
@@ -228,32 +251,38 @@
         clojure-mode elein
         coffee-mode
         flymake-coffee
-        python-mode pymacs ipython virtualenv pylookup
+
+        ;;python-mode
+        ipython virtualenv ;;pylookup
+
         haskell-mode
-        lua-mode
+        ;;lua-mode
         js2-mode
         jquery-doc
         flymake-node-jshint
-        buster-mode
+        ;;buster-mode
         yaml-mode
         restclient
 
+        ;;aws-el
+
         org-mode
         ess
-        wanderlust emacs-jabber
+        wanderlust
+        emacs-jabber
         multi-term
 
-        eredis
-        relax
+        ;;eredis
+        ;;relax
         moz
-        pg
-        elnode
+        ;;pg
+        ;;elnode
         ;; nose
         ;; flymake-point or flymake-cursor ;; I'm installing this from the vendors directory now
         ;; bookmark+ ;; the el-get recipe for this seems to be broken
-        pcache
-        gh
-        cobol-mode
+
+        ;;pcache
+        ;;gh
         ))
 
 ;; (setq dss-el-get-packages (mapcar (lambda (s)
@@ -269,5 +298,5 @@
       (el-get-update package))))
 
 (el-get 'wait dss-el-get-packages)
-
+;;;
 (provide 'dss-init-el-get)
