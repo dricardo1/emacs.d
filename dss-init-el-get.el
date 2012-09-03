@@ -199,7 +199,8 @@
       '(package
                                         ;cedet
         smex
-        session desktop-recover
+        session
+        desktop-recover
         sunrise-commander
         sunrise-x-checkpoints
         sunrise-x-modeline
