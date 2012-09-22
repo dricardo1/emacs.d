@@ -16,6 +16,6 @@
 
 (setq smex-save-file (concat dss-ephemeral-dir "smex.save"))
 (setq smex-history-length 10)
-(setq smex-flex-matching nil)
+(setq smex-flex-matching t)
 (smex-initialize)
 (provide 'dss-smex)
