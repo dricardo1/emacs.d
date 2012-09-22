@@ -268,6 +268,18 @@
                          (backward-list 1)
                          (backward-char 1)))))))))
 
+(defun dss/replace-sexp ()
+  (interactive)
+  (if (dss/in-string-p)
+      (dss/mark-string)
+    (mark-sexp))
+  (delete-region (point) (mark))
+  (yank))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; additions to standard map (non-magical ones that
+;;; won't clash too much)
 
 (defun dss/paredit-backward-delete ()
   (interactive)
@@ -276,6 +288,31 @@
     (paredit-backward-delete)))
 
 (define-key paredit-mode-map (kbd "DEL") 'dss/paredit-backward-delete)
+(define-key paredit-mode-map (kbd "M-RET") 'dss/indent-defun)
+(define-key paredit-mode-map (kbd "C-M-s") 'paredit-backward-up)
+(define-key paredit-mode-map (kbd "C-M-k") 'paredit-forward-slurp-sexp)
+(define-key paredit-mode-map (kbd "C-M-j") 'paredit-backward-slurp-sexp)
+(define-key paredit-mode-map (kbd "C-M-\\")
+  (lambda ()
+    (interactive)
+    (dss/indent-defun)
+    (back-to-indentation)))
+
+(defun dss/paredit-yank ()
+  (interactive)
+  (if (not mark-active)
+      (progn
+        (call-interactively 'yank)
+        (if (and (looking-back "\)")
+                 (looking-at-p "\("))
+            (progn
+              (reindent-then-newline-and-indent)
+              (if (looking-at-p "^")
+                  (newline)))))
+    (call-interactively 'yank))
+  (condition-case nil (dss/indent-defun)))
+
+(define-key paredit-mode-map (kbd "C-y") 'dss/paredit-yank)
 
 (defun dss/paredit-open-parenthesis ()
   (interactive)
@@ -332,13 +369,6 @@
   (indent-according-to-mode))
 (define-key paredit-mode-map (kbd "M-o") 'dss/paredit-open-line)
 
-(defun dss/replace-sexp ()
-  (interactive)
-  (if (dss/in-string-p)
-      (dss/mark-string)
-    (mark-sexp))
-  (delete-region (point) (mark))
-  (yank))
 (define-key paredit-mode-map (kbd "C-M-y") 'dss/replace-sexp)
 (define-key global-map (kbd "C-M-y") 'dss/replace-sexp)
 
@@ -356,6 +386,11 @@
 
 (define-key paredit-mode-map (kbd "M-w") 'dss/paredit-kill-ring-save)
 
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; skeletons for elisp
+
 (define-skeleton dss/elisp-let-skeleton
   "A simple e-lisp let skeleton"
   nil
@@ -363,6 +398,59 @@
   @ _ ")")
 
 (setq dss-let-skeleton-func 'dss/elisp-let-skeleton)
+
+(define-skeleton dss/elisp-defun-skeleton
+  "A simple e-lisp defun skeleton"
+  nil
+  "(defun dss/" @ - " (" @ ")" \n >
+  "(interactive" @ ")" \n >
+  @ _
+    ")")
+(setq dss-defun-skeleton-func 'dss/elisp-defun-skeleton)
+
+(define-skeleton dss-elisp-progn-skeleton
+  "A simple e-lisp progn skeleton"
+  nil
+  "(progn" @ - \n >
+  @ _ ")"
+    (dss/indent-defun))
+(setq dss-progn-skeleton-func 'dss-elisp-progn-skeleton)
+
+(define-skeleton dss/elisp-setq-skeleton
+  "A simple e-lisp setq skeleton"
+  nil
+  "(setq " @ - " " @ _ ")")
+
+
+(defun dss/elisp-s-or-setq ()
+  (interactive)
+  (dss/paredit-char-or-func 'dss/elisp-setq-skeleton t))
+(define-key emacs-lisp-mode-map "s" 'dss/elisp-s-or-setq)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; magical context-sensitive additions to paredit
+
+(defun dss/in-slime-repl-p ()
+  (equal mode-name "REPL"))
+
+(defun dss/paredit-char-or-func (func &optional undo-on-repeat)
+  (cond ((looking-back "[[:alnum:]-]")
+         (self-insert-command 1))
+        ((equal last-command this-command)
+         (when undo-on-repeat
+           (undo))
+         (self-insert-command 1))
+        ((and (not (or (dss/in-comment-p)
+                       (dss/in-string-p)))
+              (or
+               (looking-at-p "\(")
+               (and (looking-back "^[[:blank:]]*")
+                    (looking-at-p "[[:blank:]]*$"))
+               (and (looking-back "^[[:blank:]]*")
+                    (looking-at-p "[[:blank:]]*\("))))
+         (funcall func))
+        (t (self-insert-command 1))))
+
 
 (defun dss/paredit-l-or-sexp-wrap-let ()
   (interactive)
@@ -377,23 +465,13 @@
              (mark-sexp))
          (funcall dss-let-skeleton-func))
         (t (self-insert-command 1))))
-(define-key paredit-mode-map "l" 'dss/paredit-l-or-sexp-wrap-let)
-
-(define-skeleton dss/elisp-defun-skeleton
-  "A simple e-lisp defun skeleton"
-  nil
-  "(defun dss/" @ - " (" @ ")" \n >
-  "(interactive" @ ")" \n >
-  @ _
-    ")")
-(setq dss-defun-skeleton-func 'dss/elisp-defun-skeleton)
-
-(defun dss/in-slime-repl-p ()
-  (equal mode-name "REPL"))
 
 (defun dss/paredit-d-or-defun ()
   (interactive)
-  (cond ((equal last-command this-command)
+  (cond ((and (not (looking-at-p "\("))
+              (looking-back "[[:alnum:]-]"))
+         (self-insert-command 1))
+        ((equal last-command this-command)
          (undo)
          (self-insert-command 1))
         ((and (not (dss/in-string-p))
@@ -407,7 +485,6 @@
          (funcall dss-defun-skeleton-func)
          (dss/indent-defun))
         (t (self-insert-command 1))))
-(define-key paredit-mode-map "d" 'dss/paredit-d-or-defun)
 
 (defun dss/paredit-9-or-paren ()
   (interactive)
@@ -429,19 +506,12 @@
                        (slime-repl-at-prompt-start-p))))
          (dss/paredit-open-parenthesis))
         (t (self-insert-command 1))))
-(define-key paredit-mode-map "9" 'dss/paredit-9-or-paren)
-
-(define-skeleton dss-elisp-progn-skeleton
-  "A simple e-lisp progn skeleton"
-  nil
-  "(progn" @ - \n >
-  @ _ ")"
-    (dss/indent-defun))
-(setq dss-progn-skeleton-func 'dss-elisp-progn-skeleton)
 
 (defun dss/paredit-p-or-progn ()
   (interactive)
-  (cond ((equal last-command this-command)
+  (cond ((looking-back "[[:alnum:]-]")
+         (self-insert-command 1))
+        ((equal last-command this-command)
          (undo)
          (self-insert-command 1))
         ((and (not (dss/in-string-p))
@@ -451,30 +521,15 @@
              (mark-sexp))
          (funcall dss-progn-skeleton-func))
         (t (self-insert-command 1))))
-(define-key paredit-mode-map "p" 'dss/paredit-p-or-progn)
-
-(defun dss/paredit-yank ()
-  (interactive)
-  (if (not mark-active)
-      (progn
-        (call-interactively 'yank)
-        (if (and (looking-back "\)")
-                 (looking-at-p "\("))
-            (progn
-              (reindent-then-newline-and-indent)
-              (if (looking-at-p "^")
-                  (newline)))))
-    (call-interactively 'yank))
-  (condition-case nil (dss/indent-defun)))
-
-(define-key paredit-mode-map (kbd "C-y") 'dss/paredit-yank)
 
 (defun dss/paredit-y-or-yank ()
   (interactive)
-  (cond ((looking-back "^")
+  (cond ((or (and (looking-back " ")
+                  (looking-at-p "\)"))
+             (looking-back "^"))
          (call-interactively 'yank))
         (t (self-insert-command 1))))
-(define-key paredit-mode-map "y" 'dss/paredit-y-or-yank)
+
 
 (defun dss/paredit-c-or-copy ()
   (interactive)
@@ -490,22 +545,9 @@
          (save-excursion
            (forward-char 1)
            (dss/copy-defun-name)))
-        ((looking-at-p "[\(\"#\\[{]")
+        ((looking-at-p "[\(\"\\[{]")
          (dss/paredit-kill-ring-save))
         (t (self-insert-command 1))))
-(define-key paredit-mode-map "c" 'dss/paredit-c-or-copy)
-
-;; (defun dss/paredit-m-or-mark ()
-;;   (interactive)
-;;   (cond ((looking-back "m")
-;;          (self-insert-command 1))
-;;         ((equal last-command this-command)
-;;          (setq mark-active nil)
-;;          (self-insert-command 1))
-;;         ((looking-at-p "[\(\"#\\[{]")
-;;          (mark-sexp))
-;;         (t (self-insert-command 1))))
-;; (define-key paredit-mode-map "m" 'dss/paredit-m-or-mark)
 
 (defun dss/paredit-space-or-mark-sexp (&optional arg)
   (interactive "P")
@@ -523,14 +565,13 @@
               (looking-at-p "[\(\"#\\[{]"))
          (mark-sexp nil t))
         (t (self-insert-command 1))))
-(define-key paredit-mode-map " " 'dss/paredit-space-or-mark-sexp)
+
 
 (defun dss/paredit-g-deactivate-mark ()
   (interactive)
   (cond (mark-active
          (setq mark-active nil))
         (t (self-insert-command 1))))
-(define-key paredit-mode-map "g" 'dss/paredit-g-deactivate-mark)
 
 (defun dss/paredit-r-or-raise ()
   (interactive)
@@ -544,8 +585,6 @@
               (looking-at-p "\("))
          (paredit-raise-sexp))
         (t (self-insert-command 1))))
-(define-key paredit-mode-map "r" 'dss/paredit-r-or-raise)
-
 
 (defun dss/paredit-o-or-out ()
   (interactive)
@@ -554,7 +593,7 @@
         ((equal last-command this-command)
          (pop-to-mark-command)
          (self-insert-command 1))
-        ((or (looking-at-p "[\(#\\[{]")
+        ((or (looking-at-p "[\(\\[{]")
              (and (looking-back "^[[:blank:]]*")
                   (looking-at-p " *[\(#\\[{]")))
          (push-mark)
@@ -564,8 +603,7 @@
 (defun dss/paredit-u-or-out ()
   (interactive)
   (dss/paredit-o-or-out))
-(define-key paredit-mode-map "o" 'dss/paredit-o-or-out)
-(define-key paredit-mode-map "u" 'dss/paredit-u-or-out)
+
 
 (defun dss/paredit-hypen-or-outermost ()
   (interactive)
@@ -573,8 +611,6 @@
               (looking-at-p " *[\(#\\[{]"))
          (dss/out-sexp nil))
         (t (self-insert-command 1))))
-(define-key paredit-mode-map "-" 'dss/paredit-hypen-or-outermost)
-
 (defun dss/paredit-slash-or-jump-sexp ()
   (interactive)
   (cond ((looking-back "/")
@@ -585,64 +621,23 @@
         ((looking-at-p "[\(#\\[{]")
          (push-mark)
          (call-interactively 'dss/goto-match-paren))
-        ((looking-back "\)")
+        ((looking-back "[\]}\)]")
          (push-mark)
          (call-interactively 'dss/goto-match-paren))
         (t (self-insert-command 1))))
+
 (defun dss/paredit-j-or-jump-sexp ()
   (interactive)
   (dss/paredit-slash-or-jump-sexp))
-(define-key paredit-mode-map "/" 'dss/paredit-slash-or-jump-sexp)
-(define-key paredit-mode-map "j" 'dss/paredit-j-or-jump-sexp)
-
-(defun dss/paredit-char-or-func (func &optional undo-on-repeat)
-  (cond ((looking-back "[[:alnum:]-]")
-         (self-insert-command 1))
-        ((equal last-command this-command)
-         (when undo-on-repeat
-           (undo))
-         (self-insert-command 1))
-        ((and (not (or (dss/in-comment-p)
-                       (dss/in-string-p)))
-              (or
-               (looking-at-p "\(")
-               (and (looking-back "^[[:blank:]]*")
-                    (looking-at-p "[[:blank:]]*$"))
-               (and (looking-back "^[[:blank:]]*")
-                    (looking-at-p "[[:blank:]]*\("))))
-         (funcall func))
-        (t (self-insert-command 1))))
 
 (defun dss/paredit-7-or-isearch-backward ()
   (interactive)
   (dss/paredit-char-or-func 'isearch-backward))
-(define-key paredit-mode-map "7" 'dss/paredit-7-or-isearch-backward)
 
 (defun dss/paredit-8-or-isearch-forward ()
   (interactive)
   (dss/paredit-char-or-func 'isearch-forward))
-(define-key paredit-mode-map "8" 'dss/paredit-8-or-isearch-forward)
 
-(define-key paredit-mode-map (kbd "C-M-s") 'paredit-backward-up)
-(define-key paredit-mode-map (kbd "C-M-k") 'paredit-forward-slurp-sexp)
-(define-key paredit-mode-map (kbd "C-M-j") 'paredit-backward-slurp-sexp)
-
-(define-key paredit-mode-map (kbd "C-M-\\") (lambda ()
-                                              (interactive)
-                                              (dss/indent-defun)
-                                              (back-to-indentation)))
-
-(define-skeleton dss/elisp-setq-skeleton
-  "A simple e-lisp setq skeleton"
-  nil
-  "(setq " @ - " " @ _ ")")
-
-(defun dss/paredit-s-or-setq ()
-  (interactive)
-  (dss/paredit-char-or-func 'dss/elisp-setq-skeleton t))
-(define-key paredit-mode-map "s" 'dss/paredit-s-or-setq)
-
-;; (define-key paredit-mode-map (kbd "TAB") 'back-to-indentation)
 (defun dss/paredit-tab ()
   (interactive)
   (cond ((looking-back "^[[:blank:]]*")
@@ -652,13 +647,39 @@
         ((looking-back "[[:alnum:]-/]")
          (lisp-complete-symbol))
         (t (back-to-indentation))))
-(define-key paredit-mode-map (kbd "TAB") 'dss/paredit-tab)
 
-(define-key paredit-mode-map (kbd "M-RET") 'dss/indent-defun)
-;; (define-key paredit-mode-map (kbd "M-b") 'paredit-for)
+(define-minor-mode dss-paredit+-mode
+  "A helper mode for paredit"
+  nil ;; initial-value
+  " P+" ;; modeline
+  '(
+    ("l" . dss/paredit-l-or-sexp-wrap-let)
+    ("d" . dss/paredit-d-or-defun)
+    ("p" . dss/paredit-p-or-progn)
+    ("y" . dss/paredit-y-or-yank)
+    ("c" . dss/paredit-c-or-copy)
+    (" " . dss/paredit-space-or-mark-sexp)
+    ("g" . dss/paredit-g-deactivate-mark)
+    ("r" . dss/paredit-r-or-raise)
+    ("o" . dss/paredit-o-or-out)
+    ("u" . dss/paredit-u-or-out)
+    ("-" . dss/paredit-hypen-or-outermost)
+    ("/" . dss/paredit-slash-or-jump-sexp)
+    ("j" . dss/paredit-j-or-jump-sexp)
+    ("7" . dss/paredit-7-or-isearch-backward)
+    ("8" . dss/paredit-8-or-isearch-forward)
+    ("9" . dss/paredit-9-or-paren)
+    ("\t" . dss/paredit-tab))
+  :group 'dss)
+
+(define-key paredit-mode-map (kbd "<f4>=")
+  '(lambda ()
+     (interactive)
+     (dss-paredit+-mode (if dss-paredit+-mode -1 1))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; elisp
+
 (defun dss/remove-elc-on-save ()
   "If you're saving an elisp file, likely the .elc is no longer valid.
   Comes from the emacs starter kit"
